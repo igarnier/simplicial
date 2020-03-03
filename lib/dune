@@ -1,0 +1,4 @@
+(library
+ (name simplicial)
+ (public_name simplicial)
+ (libraries hashcons))
