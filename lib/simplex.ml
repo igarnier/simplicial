@@ -83,7 +83,7 @@ struct
   let rec of_list l =
     let simplex = Not_hash_consed.of_list l in
     let hashed = Table.hashcons table simplex in
-    let dim = List.length simplex in
+    let dim = List.length simplex - 1 in
     let faces =
       Not_hash_consed.fold_faces
         (fun face acc ->

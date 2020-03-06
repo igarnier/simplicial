@@ -1,21 +1,43 @@
-module type Simplex = sig
+(** Totally ordered types *)
+module type Ordered = sig
   type t
 
-  val dim : t -> int
+  val compare : t -> t -> int
+end
 
-  val of_list : int list -> t
+(** Pretty-printable types *)
+module type Pp = sig
+  type t
+
+  val pp : Format.formatter -> t -> unit
+end
+
+(** We require some structures that we manipulate
+    to be comparable, printable and hashable. *)
+module type Base = sig
+  type t
 
   val compare : t -> t -> int
 
   val equal : t -> t -> bool
 
+  val pp : Format.formatter -> t -> unit
+
   val hash : t -> int
+end
+
+module type Simplex = sig
+  type t
+
+  include Base with type t := t
+
+  val dim : t -> int
+
+  val of_list : int list -> t
 
   val faces : t -> t list
 
   val fold_faces : (t -> 'a -> 'a) -> t -> 'a -> 'a
-
-  val pp : Format.formatter -> t -> unit
 end
 
 module type Complex = sig
@@ -99,6 +121,18 @@ module type Free_module = sig
   (** "Dirac" delta *)
   val delta : underlying -> t
 
+  (** project the coefficient corresponding to a basis vector *)
+  val eval : t -> underlying -> R.t
+
   (** [bind] = canonical, "multilinear" extension *)
   val bind : t -> (underlying -> t) -> t
+end
+
+module type Finitely_generated_module = sig
+  include Free_module
+
+  val generators : underlying list
+
+  (** List coefficients in the order of [generators] *)
+  val coefficients : t -> R.t list
 end

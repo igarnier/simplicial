@@ -17,6 +17,8 @@ module Make (S : Intf.Simplex) = struct
 
   module Map = Map.Make (S)
 
+  type simplex = S.t
+
   type cell = {simplex : S.t; incident_to : Set.t}
 
   type t = {hasse : cell Map.t; slices : Set.t Int_map.t}
@@ -128,13 +130,16 @@ module Make (S : Intf.Simplex) = struct
       simplices
       Set.empty
 
-  let slice dim {slices; _} = Int_map.find dim slices
+  let slice dim {slices; _} =
+    try Int_map.find dim slices with Not_found -> Set.empty
 
   (* let link : t -> simplex_set -> simplex_set =
    *  fun map simplices ->
    *   Hset.diff
    *     (set_of_simplices map (closure (star simplices)))
    *     (star map (set_of_simplices (closure simplices))) *)
+
+  (* let index l = Array.of_list l |> Array.mapi (fun i elt -> (elt, i)) *)
 
   let pp fmtr (complex : t) =
     let keys = Map.fold (fun k _cell acc -> k :: acc) complex.hasse [] in
@@ -144,6 +149,3 @@ module Make (S : Intf.Simplex) = struct
       fmtr
       keys
 end
-
-(* let _iter f =
- *   Hashed_abstract_simplex.iter (fun hash_consed -> f hash_consed.node) table *)
