@@ -7,8 +7,7 @@ end)
 (S : Intf.Simplex) : sig
   module Complex : Intf.Complex with type simplex = S.t
 
-  module Module :
-    Intf.Free_module with type underlying = S.t and type R.t = C.t
+  module Module : Intf.Free_module with type basis = S.t and type R.t = C.t
 
   type vector = Module.t
 

@@ -1,27 +1,17 @@
-module Make (R : Intf.Ring) (U : Intf.Ordered) :
+module Make (R : sig
+  include Intf.Ring
+
+  include Intf.Ordered with type t := t
+end)
+(U : Intf.Ordered) :
   Intf.Free_module
     with type t = R.t Map.Make(U).t
-     and type underlying = U.t
+     and type basis = U.t
      and module R = R = struct
-  module R = R
-  module Map = Map.Make (U)
+  module M = Map.Make (U)
+  include Sparse_vec.Make (R) (M)
 
-  type t = R.t Map.t
-
-  type underlying = U.t
-
-  let zero = Map.empty
-
-  let delta x = Map.singleton x R.one
-
-  let add (chain1 : t) (chain2 : t) : t =
-    Map.union (fun _elt i1 i2 -> Some (R.add i1 i2)) chain1 chain2
-
-  let smul coeff chain = Map.map (fun x -> R.mul coeff x) chain
-
-  let fold f acc (chain : t) = Map.fold f chain acc
-
-  let eval v u = match Map.find_opt u v with None -> R.zero | Some c -> c
+  let delta x = M.singleton x R.one
 
   let bind : t -> (U.t -> t) -> t =
    fun chain f ->
@@ -31,13 +21,11 @@ module Make (R : Intf.Ring) (U : Intf.Ordered) :
         add acc (smul coeff chain))
       zero
       chain
-
-  let neg vec = Map.map R.neg vec
 end
 
 module Finitely_generated
     (M : Intf.Free_module) (G : sig
-      val generators : M.underlying list
+      val generators : M.basis list
     end) =
 struct
   include M
@@ -49,28 +37,31 @@ end
 
 type ('u, 'e, 'c) t =
   (module Intf.Finitely_generated_module
-     with type underlying = 'u
+     with type basis = 'u
       and type t = 'e
       and type R.t = 'c)
 
 (* A linear map between free modules *)
 type (_, _, _) linear_map =
-  | Ex : {
-      domain : ('a, 'e, 'd) t;
-      range : ('b, 'f, 'c) t;
-      map : 'a -> 'f;
-    }
+  | Ex :
+      { domain : ('a, 'e, 'd) t; range : ('b, 'f, 'c) t; map : 'a -> 'f }
       -> ('e, 'f, 'c) linear_map
 
-let to_matrix : type e f c. (e, f, c) linear_map -> c Sparse_matrix.t =
+type stats =
+  { input_rank : int;
+    output_rank : int;
+    kernel_rank : int;
+    image_rank : int;
+    torsion_coefficients : Z.t list
+  }
+
+let to_matrix : type e f. (e, f, int) linear_map -> Sparse_matrix.Z.t =
  fun map ->
   match map with
-  | Ex {domain = (module Domain); range = (module Range); map} ->
-      let input_dimension = List.length Domain.generators in
-      let output_dimension = List.length Range.generators in
-      let matrix =
-        Sparse_matrix.create ~rows:output_dimension ~cols:input_dimension
-      in
+  | Ex { domain = (module Domain); range = (module Range); map } ->
+      let input_rank = List.length Domain.generators in
+      let output_rank = List.length Range.generators in
+      let matrix = Sparse_matrix.Z.create ~rows:output_rank ~cols:input_rank in
       let (matrix, _) =
         List.fold_left
           (fun (matrix, col) u ->
@@ -78,7 +69,9 @@ let to_matrix : type e f c. (e, f, c) linear_map -> c Sparse_matrix.t =
             let (matrix, _) =
               List.fold_left
                 (fun (matrix, row) coeff ->
-                  let matrix = Sparse_matrix.set ~row ~col matrix coeff in
+                  let matrix =
+                    Sparse_matrix.Z.set ~row ~col (Z.of_int coeff) matrix
+                  in
                   (matrix, row + 1))
                 (matrix, 0)
                 coeffs
@@ -88,3 +81,47 @@ let to_matrix : type e f c. (e, f, c) linear_map -> c Sparse_matrix.t =
           Domain.generators
       in
       matrix
+
+let rank : type u e c. (u, e, c) t -> int =
+ fun m ->
+  let (module M) = m in
+  List.length M.generators
+
+let nonzero_diagonal : Sparse_matrix.Z.t -> Z.t list =
+ fun matrix ->
+  Sparse_matrix.Z.fold_cols
+    (fun i c acc ->
+      let e = Sparse_matrix.Z.Col.get c i in
+      if Z.equal e Z.zero then acc else e :: acc)
+    matrix
+    []
+
+let ranks_of_kernel_and_image : type u e. (u, e, int) linear_map -> stats =
+ fun map ->
+  match map with
+  | Ex { domain; range; _ } ->
+      let input_rank = rank domain in
+      let output_rank = rank range in
+      let matrix = to_matrix map in
+      let matrix = Snf.smith_normal_form matrix in
+      let diag = nonzero_diagonal matrix in
+      let kernel_rank = input_rank - List.length diag in
+      let image_rank = List.length diag in
+      let torsion_coefficients = diag in
+      { input_rank; output_rank; kernel_rank; image_rank; torsion_coefficients }
+
+let pp_stats : Format.formatter -> stats -> unit =
+ fun fmtr stats ->
+  Format.fprintf fmtr "@[" ;
+  Format.fprintf fmtr "input_rank = %d;" stats.input_rank ;
+  Format.fprintf fmtr "output_rank = %d;" stats.output_rank ;
+  Format.fprintf fmtr "kernel_rank = %d;" stats.kernel_rank ;
+  Format.fprintf fmtr "image_rank = %d;" stats.image_rank ;
+  Format.fprintf
+    fmtr
+    "torsion_coefficients = [%a];"
+    (Format.pp_print_list
+       ~pp_sep:(fun fmtr () -> Format.fprintf fmtr ";")
+       Z.pp_print)
+    stats.torsion_coefficients ;
+  Format.fprintf fmtr "@]"
