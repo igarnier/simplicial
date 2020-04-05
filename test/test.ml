@@ -20,6 +20,7 @@ module Test_1 = struct
   let () =
     let splx = S.of_list [3; 4; 5; 6] in
     let set = M.faces splx state in
+    Format.printf "Dimension of complex: %d@." (M.dim state) ;
     Format.printf "printing faces of %a@." S.pp splx ;
     Format.printf "%a@." M.Set.pp set
 
@@ -74,111 +75,39 @@ module Test_2 = struct
     Format.printf "dim 0:@.%a@." M.Set.pp set
 end
 
-(* module Z = struct
- *   type t = int
- *
- *   let pp = Format.pp_print_int
- *
- *   let hash = Hashtbl.hash
- *
- *   let compare = Int.compare
- *
- *   let equal = Int.equal
- *
- *   let add = ( + )
- *
- *   let mul = ( * )
- *
- *   let neg = ( ~- )
- *
- *   let one = 1
- *
- *   let zero = 0
- *
- *   let big_is_prime p =
- *     (\* Taken from OCaml-Primes library by "Kit Freddura <kitfreddura@gmail.com>" *\)
- *     let open Z in
- *     let interval x y by =
- *       match x = y with
- *       | true -> Gen.empty
- *       | false ->
- *           Gen.unfold
- *             (fun z ->
- *               if compare x y = compare z y then Some (z, add by z) else None)
- *             x
- *     in
- *     let binom a b =
- *       let frac =
- *         Gen.fold mul one (interval a (a - b) minus_one)
- *         / Gen.fold mul one (interval b zero minus_one)
- *       in
- *       let res = if b < a && is_even b then minus_one else one in
- *       frac |> mul @@ res
- *     in
- *     let expansion n = Gen.map (binom n) (interval n (add n one) one) in
- *     Gen.drop 1 (expansion p)
- *     |> Gen.peek
- *     |> Gen.filter_map (function (_, None) -> None | (x, _) -> Some x)
- *     |> Gen.for_all (fun n -> rem n p = zero)
- *
- *   let is_prime p = big_is_prime (Z.of_int p)
- *
- *   let prime_factorization p =
- *     (\* Taken from OCaml-Primes library by "Kit Freddura <kitfreddura@gmail.com>" *\)
- *     let rec divide_out p n = if p mod n = 0 then divide_out (p / n) n else p in
- *     let rec prime_factors' p n acc =
- *       if p = 1 then List.rev acc
- *       else
- *         match p mod n = 0 with
- *         | true ->
- *             if is_prime n then prime_factors' (divide_out p n) (n + 1) (n :: acc)
- *             else prime_factors' (p / n) n acc
- *         | false -> prime_factors' p (n + 1) acc
- *     in
- *     prime_factors' p 2 []
- * end *)
-
-module I = struct
-  include Int
-
-  let pp = Format.pp_print_int
-
-  let hash = Hashtbl.hash
-end
-
 (* Test chains *)
 module Test_3 = struct
   module S = Simplex.Hash_consed (struct
     let initial_table_size = 41
   end)
 
-  module M = Complex.Make (S)
-  module Chain =
-    Chain.Make
-      (I)
-      (* (struct
-         *   include Z
-         *
-         *   let pp = pp_print
-         * end) *)
+  module Homology =
+    Homology.Make
+      (struct
+        type c = Z.t
+
+        let coeff = Coefficient.Z_coeff
+      end)
       (S)
+
+  module SC = Homology.Simplicial_complex
 
   let simplex = S.of_list [0; 1; 2; 3]
 
-  let complex = Chain.Complex.insert simplex Chain.Complex.empty
+  let complex = SC.insert simplex SC.empty
 
   let () =
     let dims = [0; 1; 2; 3; 4] in
     List.iter
       (fun i ->
-        let subcomplexes = Chain.Complex.slice i complex in
+        let subcomplexes = SC.slice i complex in
         Format.printf
           "dimension %d simplices: %d@."
           i
-          (Chain.Complex.Set.cardinal subcomplexes))
+          (SC.Set.cardinal subcomplexes))
       dims
 
-  let boundary = Chain.boundary ~complex ~k:2
+  let boundary = Homology.boundary ~complex ~k:2
 
   let () =
     match boundary with
@@ -188,7 +117,7 @@ module Test_3 = struct
         Format.printf "input dim: %d@." (List.length D.generators) ;
         Format.printf "output dim: %d@." (List.length R.generators)
 
-  let matrix = Free_module.to_matrix boundary
+  let matrix = Free_module.to_matrix (module Sparse_matrix.Z) boundary
 
   let snf = Snf.smith_normal_form matrix
 
@@ -200,8 +129,8 @@ module Test_3 = struct
     Format.printf "%a@." Sparse_matrix.Z.pp snf
 
   let () =
-    let stats = Free_module.ranks_of_kernel_and_image boundary in
-    Format.printf "stats:@.%a@." Free_module.pp_stats stats
+    let stats = Free_module.map_info Coefficient.Z_coeff boundary in
+    Format.printf "stats:@.%a@." Free_module.pp_info stats
 end
 
 (* Test smith normal form *)
@@ -225,7 +154,7 @@ module Test_4 = struct
 
   let m = Snf.smith_normal_form m
 
-  let () = Format.printf "%a@." M.pp m
+  let () = Format.printf "%a@." Sparse_matrix.Z.pp m
 
   let m =
     let open M.Op in
@@ -251,5 +180,32 @@ module Test_4 = struct
 
   let m = Snf.smith_normal_form m
 
-  let () = Format.printf "%a@." M.pp m
+  let () = Format.printf "%a@." Sparse_matrix.Z.pp m
+end
+
+module Test_5 = struct
+  module S = Simplex.Hash_consed (struct
+    let initial_table_size = 41
+  end)
+
+  module Homology =
+    Homology.Make
+      (struct
+        type c = Z.t
+
+        let coeff = Coefficient.Z_coeff
+      end)
+      (S)
+
+  module SC = Homology.Simplicial_complex
+
+  let complex =
+    let full = S.of_list [0; 1; 2; 3] in
+    S.fold_faces SC.insert full SC.empty
+
+  let () =
+    let homology = Homology.homology ~complex in
+    List.iter
+      (fun (dim, betti) -> Format.eprintf "dim %d: betti = %d@." dim betti)
+      homology
 end

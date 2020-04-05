@@ -104,9 +104,6 @@ let find_min_elt : m:Mat.t -> min:matrix_elt -> where:where -> matrix_elt =
         min
         loc_list
 
-let _element_not_divided : divider:int -> int -> bool =
- fun ~divider i -> i mod divider = 0
-
 let pp_min fmtr { elt; row; col } =
   Format.fprintf fmtr "m[%d,%d] = %a" row col Z.pp_print elt
 
@@ -259,7 +256,7 @@ let simplify m min =
     row
     m
 
-let smith_normal_form : Mat.t -> Mat.t =
+let smith_normal_form : Sparse_matrix.Z.t -> Sparse_matrix.Z.t =
  fun m ->
   let rows = Mat.rows m in
   let cols = Mat.cols m in

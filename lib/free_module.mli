@@ -1,9 +1,4 @@
-module Make (R : sig
-  include Intf.Ring
-
-  include Intf.Ordered with type t := t
-end)
-(U : Intf.Ordered) :
+module Make (R : Intf.Ring) (U : Intf.Ordered) :
   Intf.Free_module
     with type t = R.t Map.Make(U).t
      and type basis = U.t
@@ -18,26 +13,21 @@ module Finitely_generated
      and type basis = M.basis
      and module R = M.R
 
-(** Packed free modules. Type parameters:
-    'u = index of the basis vectors
-    'e = elements of the free module (finite liner combinations indexed by 'u)
-    'c = coefficients of the linear combinations
-*)
-type ('u, 'e, 'c) t =
+type ('coeff, 'basis, 'vector) t =
   (module Intf.Finitely_generated_module
-     with type basis = 'u
-      and type t = 'e
-      and type R.t = 'c)
+     with type R.t = 'coeff
+      and type basis = 'basis
+      and type t = 'vector)
 
 (** Type of linear maps between free modules. A linear map can always
     be decomposed into a Kleisli arrow [map] from the basis vectors
     of the [domain] to the vectors of [range]. *)
-type (_, _, _) linear_map =
+type 'coeff linear_map =
   | Ex :
-      { domain : ('a, 'e, 'd) t; range : ('b, 'f, 'c) t; map : 'a -> 'f }
-      -> ('e, 'f, 'c) linear_map
+      { domain : (_, 'b1, _) t; range : ('c2, _, 'v2) t; map : 'b1 -> 'v2 }
+      -> 'c2 linear_map
 
-type stats =
+type map_info =
   { input_rank : int;
     output_rank : int;
     kernel_rank : int;
@@ -45,10 +35,13 @@ type stats =
     torsion_coefficients : Z.t list
   }
 
-val to_matrix : ('e, 'f, int) linear_map -> Sparse_matrix.Z.t
+val to_matrix :
+  (module Intf.Mat with type t = 'm and type R.t = 'c) -> 'c linear_map -> 'm
 
-val rank : ('u, 'e, 'c) t -> int
+(* val to_matrix : Z.t linear_map -> Sparse_matrix.Z.t *)
 
-val ranks_of_kernel_and_image : ('u, 'e, int) linear_map -> stats
+val rank : (_, _, _) t -> int
 
-val pp_stats : Format.formatter -> stats -> unit
+val map_info : 'c Coefficient.t -> 'c linear_map -> map_info
+
+val pp_info : Format.formatter -> map_info -> unit

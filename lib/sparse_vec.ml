@@ -1,9 +1,4 @@
-module Make (R : sig
-  include Intf.Ring
-
-  include Intf.Ordered with type t := t
-end)
-(M : Map.S) :
+module Make (R : Intf.Ring) (M : Map.S) :
   Intf.Vec with module R = R and type t = R.t M.t and type basis = M.key =
 struct
   module R = R
@@ -101,9 +96,12 @@ struct
 end
 
 let%test "sparse_vec" =
-  let module M = Map.Make (Int) in
-  let module V = Make (Int) (M) in
-  let v1 = V.of_list [(0, 10); (1, 3); (2, 0)] in
-  let v2 = V.of_list [(0, -10); (1, -3); (2, 0)] in
-  let v3 = V.of_list [(0, -10); (1, -3); (2, 1)] in
+  let module M = Map.Make (Coefficient.Z) in
+  let module V = Make (Coefficient.Z) (M) in
+  let of_list l =
+    V.of_list (List.map (fun (x, y) -> (Z.of_int x, Z.of_int y)) l)
+  in
+  let v1 = of_list [(0, 10); (1, 3); (2, 0)] in
+  let v2 = of_list [(0, -10); (1, -3); (2, 0)] in
+  let v3 = of_list [(0, -10); (1, -3); (2, 1)] in
   M.is_empty (V.add v1 v2) && not (M.is_empty (V.add v1 v3))

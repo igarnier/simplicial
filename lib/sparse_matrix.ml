@@ -1,10 +1,4 @@
-module Make (R : sig
-  include Intf.Ring
-
-  include Intf.Pp with type t := t
-
-  include Intf.Ordered with type t := t
-end) : Intf.Mat with module R = R = struct
+module Make (R : Intf.Ring) : Intf.Mat with module R = R = struct
   module Int_map = Map.Make (struct
     type t = int
 
@@ -342,14 +336,21 @@ end) : Intf.Mat with module R = R = struct
   end
 end
 
-module Z = Make (struct
-  include Z
+module Z = Make (Coefficient.Z)
+module Z2 = Make (Coefficient.Z2)
+module Q = Make (Coefficient.Q)
+module Float = Make (Coefficient.Float)
 
-  let pp = pp_print
-end)
+type 'a t =
+  | Z_mat : Z.t -> Coefficient.Z.t t
+  | Z2_mat : Z2.t -> Coefficient.Z2.t t
+  | Q_mat : Q.t -> Coefficient.Q.t t
+  | Float_mat : Float.t -> Coefficient.Float.t t
 
-module Int = Make (struct
-  include Int
-
-  let pp = Format.pp_print_int
-end)
+let pp : type c. Format.formatter -> c t -> unit =
+ fun fmtr mat ->
+  match mat with
+  | Z_mat m -> Z.pp fmtr m
+  | Z2_mat m -> Z2.pp fmtr m
+  | Q_mat m -> Q.pp fmtr m
+  | Float_mat m -> Float.pp fmtr m
