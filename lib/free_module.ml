@@ -1,5 +1,5 @@
-module Make (R : Intf.Ring) (U : Intf.Ordered) :
-  Intf.Free_module
+module Make (R : Intf_simplicial.Ring) (U : Intf_simplicial.Ordered) :
+  Intf_simplicial.Free_module
     with type t = R.t Map.Make(U).t
      and type basis = U.t
      and module R = R = struct
@@ -19,7 +19,7 @@ module Make (R : Intf.Ring) (U : Intf.Ordered) :
 end
 
 module Finitely_generated
-    (M : Intf.Free_module) (G : sig
+    (M : Intf_simplicial.Free_module) (G : sig
       val generators : M.basis list
     end) =
 struct
@@ -31,7 +31,7 @@ struct
 end
 
 type ('coeff, 'basis, 'vector) t =
-  (module Intf.Finitely_generated_module
+  (module Intf_simplicial.Finitely_generated_module
      with type R.t = 'coeff
       and type basis = 'basis
       and type t = 'vector)
@@ -52,7 +52,9 @@ type map_info =
 
 let to_matrix :
     type c m.
-    (module Intf.Mat with type t = m and type R.t = c) -> c linear_map -> m =
+    (module Intf_simplicial.Mat with type t = m and type R.t = c) ->
+    c linear_map ->
+    m =
  fun (module Mat) map ->
   match map with
   | Ex { domain = (module Domain); range = (module Range); map } ->
@@ -79,7 +81,7 @@ let to_matrix :
 
 (* let to_matrix : type c. c Coefficient.t -> c linear_map -> c Sparse_matrix.t =
  *   fun (type c) (coeff : c Coefficient.t) (map : c linear_map) ->
- *    let (module Mat : Intf.Mat with type R.t = c) =
+ *    let (module Mat : Intf_simplicial.Mat with type R.t = c) =
  *      match coeff with
  *      | Coefficient.Z_coeff -> (module Sparse_matrix.Z)
  *      | Coefficient.Int_coeff -> (module Sparse_matrix.Int)
@@ -141,7 +143,8 @@ let rank : type u e c. (u, e, c) t -> int =
   List.length M.generators
 
 let nonzero_diagonal :
-    type c m. (module Intf.Mat with type t = m and type R.t = c) -> m -> c list
+    type c m.
+    (module Intf_simplicial.Mat with type t = m and type R.t = c) -> m -> c list
     =
  fun (module Mat) matrix ->
   Mat.fold_cols

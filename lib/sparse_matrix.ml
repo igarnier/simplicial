@@ -1,4 +1,5 @@
-module Make (R : Intf.Ring) : Intf.Mat with module R = R = struct
+module Make (R : Intf_simplicial.Ring) : Intf_simplicial.Mat with module R = R =
+struct
   module Int_map = Map.Make (struct
     type t = int
 

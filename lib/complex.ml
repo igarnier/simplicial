@@ -1,6 +1,6 @@
 module Int_map = Map.Make (Int)
 
-module Make (S : Intf.Simplex) = struct
+module Make (S : Intf_simplicial.Simplex) = struct
   module Simplex = S
 
   module Set = struct
@@ -60,7 +60,7 @@ module Make (S : Intf.Simplex) = struct
             { hasse = Map.add simplex cell complex.hasse;
               slices = complex.slices
             }
-        | None -> complex )
+        | None -> complex)
     | exception Not_found ->
         (* Recursively insert faces into abstract simplicial complex *)
         let complex =

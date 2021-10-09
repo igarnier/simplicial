@@ -1,6 +1,8 @@
-module Make (R : Intf.Ring) (M : Map.S) :
-  Intf.Vec with module R = R and type t = R.t M.t and type basis = M.key =
-struct
+module Make (R : Intf_simplicial.Ring) (M : Map.S) :
+  Intf_simplicial.Vec
+    with module R = R
+     and type t = R.t M.t
+     and type basis = M.key = struct
   module R = R
 
   type t = R.t M.t

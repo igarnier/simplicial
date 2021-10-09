@@ -1,10 +1,10 @@
-module Z : Intf.Ring with type t = Z.t = struct
+module Z : Intf_simplicial.Ring with type t = Z.t = struct
   include Z
 
   let pp = pp_print
 end
 
-module Z2 : Intf.Field = struct
+module Z2 : Intf_simplicial.Field = struct
   type t = Zero | One
 
   let zero = Zero
@@ -42,7 +42,7 @@ module Z2 : Intf.Field = struct
     | (One, Zero) -> 1
 end
 
-module Q : Intf.Field with type t = Q.t = struct
+module Q : Intf_simplicial.Field with type t = Q.t = struct
   include Q
 
   let hash ({ num; den } : Q.t) = Hashtbl.hash (Z.hash num, Z.hash den)
@@ -50,7 +50,7 @@ module Q : Intf.Field with type t = Q.t = struct
   let pp = Q.pp_print
 end
 
-module Float : Intf.Field with type t = float = struct
+module Float : Intf_simplicial.Field with type t = float = struct
   include Float
 
   let hash (x : float) = Hashtbl.hash x
@@ -64,7 +64,7 @@ type 'a t =
   | Q_coeff : Q.t t
   | Float_coeff : float t
 
-let ring : type c. c t -> (module Intf.Ring with type t = c) =
+let ring : type c. c t -> (module Intf_simplicial.Ring with type t = c) =
  fun coeff ->
   match coeff with
   | Z_coeff -> (module Z)

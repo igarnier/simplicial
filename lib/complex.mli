@@ -1,9 +1,9 @@
 (** Computing with simplicial complexes. *)
-module Make (S : Intf.Simplex) : sig
+module Make (S : Intf_simplicial.Simplex) : sig
   (** [t] is the type of an abstract simplicial complex. *)
   type t
 
-  module Simplex : Intf.Simplex with type t = S.t
+  module Simplex : Intf_simplicial.Simplex with type t = S.t
 
   module Set : sig
     include Set.S with type elt = Simplex.t

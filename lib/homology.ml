@@ -3,9 +3,10 @@ module Make (Coeff : sig
 
   val coeff : c Coefficient.t
 end)
-(S : Intf.Simplex) =
+(S : Intf_simplicial.Simplex) =
 struct
-  module R = (val Coefficient.ring Coeff.coeff : Intf.Ring with type t = Coeff.c)
+  module R = (val Coefficient.ring Coeff.coeff : Intf_simplicial.Ring
+                with type t = Coeff.c)
 
   module Simplicial_complex = Complex.Make (S)
   module M = Free_module.Make (R) (S)

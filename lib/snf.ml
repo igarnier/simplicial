@@ -83,7 +83,7 @@ let find_min_elt_all : m:Mat.t -> start:int -> matrix_elt option =
               match acc with
               | None -> Some { elt; row = rowi; col = coli }
               | Some { elt = min; _ } ->
-                  if Z.abs elt >= Z.abs min then acc
+                  if Z.Compare.(Z.abs elt >= Z.abs min) then acc
                   else Some { elt; row = rowi; col = coli })
           col
           acc)
@@ -228,7 +228,7 @@ let rec smith_loop m min index =
                   min
                   index
               in
-              (m, min) ) )
+              (m, min)))
 
 let simplify m min =
   let open Mat.Op in

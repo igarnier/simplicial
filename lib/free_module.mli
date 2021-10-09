@@ -1,20 +1,20 @@
-module Make (R : Intf.Ring) (U : Intf.Ordered) :
-  Intf.Free_module
+module Make (R : Intf_simplicial.Ring) (U : Intf_simplicial.Ordered) :
+  Intf_simplicial.Free_module
     with type t = R.t Map.Make(U).t
      and type basis = U.t
      and module R = R
 
 module Finitely_generated
-    (M : Intf.Free_module) (G : sig
+    (M : Intf_simplicial.Free_module) (G : sig
       val generators : M.basis list
     end) :
-  Intf.Finitely_generated_module
+  Intf_simplicial.Finitely_generated_module
     with type t = M.t
      and type basis = M.basis
      and module R = M.R
 
 type ('coeff, 'basis, 'vector) t =
-  (module Intf.Finitely_generated_module
+  (module Intf_simplicial.Finitely_generated_module
      with type R.t = 'coeff
       and type basis = 'basis
       and type t = 'vector)
@@ -36,7 +36,9 @@ type map_info =
   }
 
 val to_matrix :
-  (module Intf.Mat with type t = 'm and type R.t = 'c) -> 'c linear_map -> 'm
+  (module Intf_simplicial.Mat with type t = 'm and type R.t = 'c) ->
+  'c linear_map ->
+  'm
 
 (* val to_matrix : Z.t linear_map -> Sparse_matrix.Z.t *)
 
