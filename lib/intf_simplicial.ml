@@ -1,95 +1,12 @@
-(** Totally ordered types *)
-module type Ordered = sig
-  type t
-
-  val compare : t -> t -> int
-end
-
-(** Pretty-printable types *)
-module type Pp = sig
-  type t
-
-  val pp : Format.formatter -> t -> unit
-end
-
-(** We require some structures that we manipulate to be comparable, printable and hashable. *)
-module type Std = sig
-  type t
-
-  val compare : t -> t -> int
-
-  val equal : t -> t -> bool
-
-  val pp : Format.formatter -> t -> unit
-
-  val hash : t -> int
-end
-
-module type Abelian_group = sig
-  type t
-
-  val zero : t
-
-  val add : t -> t -> t
-
-  val neg : t -> t
-end
-
-module type Monoid = sig
-  type t
-
-  val one : t
-
-  val mul : t -> t -> t
-end
-
-module type Ring = sig
-  include Abelian_group
-
-  include Monoid with type t := t
-
-  include Std with type t := t
-end
-
-(* Assuming the ring is commutative. *)
-module type Field = sig
-  include Ring
-
-  val div : t -> t -> t
-end
-
 module type Unique_factorization_domain = sig
   (* Ring must be commutative *)
-  include Ring
+  include Basic_intf.Ring_std
 
   val prime_factorization : t -> t list
 end
 
-module type Module = sig
-  module R : Ring
-
-  include Abelian_group
-
-  val smul : R.t -> t -> t
-end
-
-module type Free_module = sig
-  include Module
-
-  type basis
-
-  (** "Dirac" delta *)
-  val delta : basis -> t
-
-  (** project the coefficient corresponding to a basis vector *)
-  val eval : t -> basis -> R.t
-
-  (** [bind] = canonical, "multilinear" extension *)
-  val bind : t -> (basis -> t) -> t
-end
-
 module type Finitely_generated_module = sig
-  include Free_module
+  include Basic_intf.Free_module_std
 
   (* TODO: relations? *)
 
@@ -101,7 +18,7 @@ end
 
 (** Sparse vectors. *)
 module type Vec = sig
-  include Module
+  include Basic_intf.Module_std
 
   type basis
 
@@ -170,7 +87,7 @@ end
 
 (** Sparse matrices. *)
 module type Mat = sig
-  module R : Ring
+  module R : Basic_intf.Ring_std
 
   module Col : Vec with module R = R and type basis = int
 
@@ -262,7 +179,7 @@ end
 module type Simplex = sig
   type t
 
-  include Std with type t := t
+  include Basic_intf.Std with type t := t
 
   val dim : t -> int
 

@@ -1,25 +1,5 @@
-module Make (R : Intf_simplicial.Ring) (U : Intf_simplicial.Ordered) :
-  Intf_simplicial.Free_module
-    with type t = R.t Map.Make(U).t
-     and type basis = U.t
-     and module R = R = struct
-  module M = Map.Make (U)
-  include Sparse_vec.Make (R) (M)
-
-  let delta x = M.singleton x R.one
-
-  let bind : t -> (U.t -> t) -> t =
-   fun chain f ->
-    fold
-      (fun simplex coeff acc ->
-        let chain = f simplex in
-        add acc (smul coeff chain))
-      zero
-      chain
-end
-
 module Finitely_generated
-    (M : Intf_simplicial.Free_module) (G : sig
+    (M : Basic_intf.Free_module_std) (G : sig
       val generators : M.basis list
     end) =
 struct
@@ -33,7 +13,7 @@ end
 type ('coeff, 'basis, 'vector) t =
   (module Intf_simplicial.Finitely_generated_module
      with type R.t = 'coeff
-      and type basis = 'basis
+      and type Basis.t = 'basis
       and type t = 'vector)
 
 (* A linear map between free modules *)

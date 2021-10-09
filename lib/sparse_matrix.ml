@@ -1,4 +1,4 @@
-module Make (R : Intf_simplicial.Ring) : Intf_simplicial.Mat with module R = R =
+module Make (R : Basic_intf.Ring_std) : Intf_simplicial.Mat with module R = R =
 struct
   module Int_map = Map.Make (struct
     type t = int
@@ -337,16 +337,16 @@ struct
   end
 end
 
-module Z = Make (Coefficient.Z)
-module Z2 = Make (Coefficient.Z2)
-module Q = Make (Coefficient.Q)
-module Float = Make (Coefficient.Float)
+module Z = Make (Basic_impl.Integer)
+module Z2 = Make (Basic_impl.Integer_mod2)
+module Q = Make (Basic_impl.Reals.Rational)
+module Float = Make (Basic_impl.Reals.Float)
 
 type 'a t =
-  | Z_mat : Z.t -> Coefficient.Z.t t
-  | Z2_mat : Z2.t -> Coefficient.Z2.t t
-  | Q_mat : Q.t -> Coefficient.Q.t t
-  | Float_mat : Float.t -> Coefficient.Float.t t
+  | Z_mat : Z.t -> Basic_impl.Integer.t t
+  | Z2_mat : Z2.t -> Basic_impl.Integer_mod2.t t
+  | Q_mat : Q.t -> Basic_impl.Reals.Rational.t t
+  | Float_mat : Float.t -> Basic_impl.Reals.Float.t t
 
 let pp : type c. Format.formatter -> c t -> unit =
  fun fmtr mat ->

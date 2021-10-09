@@ -1,4 +1,4 @@
-module Make (R : Intf_simplicial.Ring) (M : Map.S) :
+module Make (R : Basic_intf.Ring_std) (M : Map.S) :
   Intf_simplicial.Vec
     with module R = R
      and type t = R.t M.t
@@ -86,6 +86,12 @@ module Make (R : Intf_simplicial.Ring) (M : Map.S) :
         fmtr
         bindings
 
+  let hash _ = assert false
+
+  let equal _ _ = assert false
+
+  let compare _ _ = assert false
+
   module Op = struct
     let ( .%[] ) vec x = get vec x
 
@@ -98,8 +104,8 @@ module Make (R : Intf_simplicial.Ring) (M : Map.S) :
 end
 
 let%test "sparse_vec" =
-  let module M = Map.Make (Coefficient.Z) in
-  let module V = Make (Coefficient.Z) (M) in
+  let module M = Map.Make (Basic_impl.Integer) in
+  let module V = Make (Basic_impl.Integer) (M) in
   let of_list l =
     V.of_list (List.map (fun (x, y) -> (Z.of_int x, Z.of_int y)) l)
   in

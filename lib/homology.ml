@@ -5,11 +5,11 @@ module Make (Coeff : sig
 end)
 (S : Intf_simplicial.Simplex) =
 struct
-  module R = (val Coefficient.ring Coeff.coeff : Intf_simplicial.Ring
+  module R = (val Coefficient.ring Coeff.coeff : Basic_intf.Ring_std
                 with type t = Coeff.c)
 
   module Simplicial_complex = Complex.Make (S)
-  module M = Free_module.Make (R) (S)
+  module M = Basic_impl.Free_module.Make_with_map (S) (R)
 
   type chain_complex =
     | Empty

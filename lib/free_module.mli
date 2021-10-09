@@ -1,22 +1,16 @@
-module Make (R : Intf_simplicial.Ring) (U : Intf_simplicial.Ordered) :
-  Intf_simplicial.Free_module
-    with type t = R.t Map.Make(U).t
-     and type basis = U.t
-     and module R = R
-
 module Finitely_generated
-    (M : Intf_simplicial.Free_module) (G : sig
+    (M : Basic_intf.Free_module_std) (G : sig
       val generators : M.basis list
     end) :
   Intf_simplicial.Finitely_generated_module
-    with type t = M.t
-     and type basis = M.basis
+    with module Basis = M.Basis
      and module R = M.R
+     and type t = M.t
 
 type ('coeff, 'basis, 'vector) t =
   (module Intf_simplicial.Finitely_generated_module
      with type R.t = 'coeff
-      and type basis = 'basis
+      and type Basis.t = 'basis
       and type t = 'vector)
 
 (** Type of linear maps between free modules. A linear map can always
